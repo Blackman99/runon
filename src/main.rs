@@ -137,6 +137,11 @@ fn scan(homes: &trace::Homes) -> scan::Report {
 }
 
 fn main() {
+    // `runon | head` should end quietly, like every other Unix tool
+    #[cfg(unix)]
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
     if let Some(code) = demo::role() {
         std::process::exit(code);
     }
@@ -272,7 +277,7 @@ fn run_demo(a: &Args, c: &Paint) -> i32 {
                 .count()
         };
         if (mine(scan::Verdict::Outlived) >= 2 && mine(scan::Verdict::Returned) >= 1)
-            || t0.elapsed().as_secs() >= 6
+            || t0.elapsed().as_secs() >= 12
         {
             break;
         }

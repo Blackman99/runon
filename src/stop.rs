@@ -41,6 +41,7 @@ pub fn select(r: &Report, o: &StopOpts) -> Result<Vec<Target>, String> {
     };
     let mut picked: Vec<&Group> = vec![];
     let mut out = vec![];
+    let mut late = vec![];
     if let Some(sid) = &o.hook {
         // SessionEnd: everything this session started, attached or not.
         picked.extend(
@@ -60,7 +61,7 @@ pub fn select(r: &Report, o: &StopOpts) -> Result<Vec<Target>, String> {
             .collect();
         hs.sort_by_key(|p| p.pid);
         for p in hs {
-            out.push(Target {
+            late.push(Target {
                 label: format!("{} (demo harness)", p.name),
                 verdict: None,
                 procs: vec![(p.pid, p.start)],
@@ -140,6 +141,7 @@ pub fn select(r: &Report, o: &StopOpts) -> Result<Vec<Target>, String> {
             procs,
         });
     }
+    out.extend(late);
     Ok(out)
 }
 
@@ -236,10 +238,10 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
             let b = t
                 .verdict
                 .map(|v| badge(c, v))
-                .unwrap_or_else(|| c.dim("  CHOSEN   "));
+                .unwrap_or_else(|| c.dim(if o.demo { " HARNESS  " } else { " BY PID   " }));
             let pids: Vec<String> = t.procs.iter().map(|p| p.0.to_string()).collect();
             println!(
-                "  {b} {}  {}",
+                " {b} {}  {}",
                 t.label,
                 c.dim(&format!("pid {}", pids.join(" ")))
             );
@@ -296,8 +298,35 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
             "detail": detail,
         }));
     }
+    if o.demo {
+        remove_demo_dirs(r);
+    }
     if o.json {
         println!("{}", json!({"stopped": results}));
     }
     Ok(if bad > 0 { 1 } else { 0 })
+}
+
+/// `runon stop --demo` also deletes the demo's own temp folders (and only
+/// folders named runon-demo-* inside the temp dir).
+fn remove_demo_dirs(r: &Report) {
+    let tmp = std::env::temp_dir();
+    let mut dirs: Vec<String> = r
+        .snap
+        .procs
+        .values()
+        .filter_map(|p| p.env("RUNON_DEMO_HOME").map(String::from))
+        .collect();
+    dirs.sort();
+    dirs.dedup();
+    for d in dirs {
+        let p = std::path::Path::new(&d);
+        let named = p
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| n.starts_with("runon-demo-"));
+        if named && p.parent() == Some(tmp.as_path()) {
+            let _ = std::fs::remove_dir_all(p);
+        }
+    }
 }

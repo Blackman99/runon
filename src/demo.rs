@@ -218,7 +218,12 @@ pub fn role() -> Option<i32> {
                     .stdin(Stdio::null())
                     .stdout(Stdio::null())
                     .stderr(Stdio::null());
-                let _ = c.spawn();
+                if c.spawn().is_ok()
+                    && let Ok(home) = std::env::var("RUNON_DEMO_HOME")
+                {
+                    // tell the harness the child exists (process start is slow on Windows)
+                    let _ = std::fs::write(Path::new(&home).join(format!(".started-{name}")), b"");
+                }
             }
             idle(deadline)
         }
@@ -288,7 +293,12 @@ fn harness(deadline: u64) {
             let mut sh = tool("sh", &["-c", "tsc --watch -p ."], "parent");
             sh.env("RUNON_DEMO_CHILD", "tsc\x1f--watch\x1f-p\x1f.");
             if let Ok(mut s) = sh.spawn() {
-                std::thread::sleep(Duration::from_millis(400));
+                let mark = Path::new(&home).join(".started-tsc");
+                let t = Instant::now();
+                while !mark.exists() && t.elapsed() < Duration::from_secs(15) {
+                    std::thread::sleep(Duration::from_millis(50));
+                }
+                std::thread::sleep(Duration::from_millis(150));
                 let _ = s.kill();
                 let _ = s.wait();
             }

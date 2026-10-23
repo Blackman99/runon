@@ -114,13 +114,13 @@ pub fn text(r: &Report, all: bool, c: &Paint) -> String {
 fn group(r: &Report, g: &Group, c: &Paint, w: usize) -> String {
     let s = &r.snap;
     let root = &s.procs[&g.root];
-    let pad = "            ";
+    let pad = "           ";
     let mut right = format!("pid {}", g.root);
     if g.pids.len() > 1 {
         right += &format!(" +{}", g.pids.len() - 1);
     }
     let tags: String = g.tags.iter().map(|t| format!(" {t}")).collect();
-    let room = w.saturating_sub(12 + right.len() + tags.len() + 3).max(20);
+    let room = w.saturating_sub(11 + right.len() + tags.len() + 3).max(20);
     let cmd = clip(&root.command(), room);
     let gap = room.saturating_sub(cmd.chars().count()) + 2;
     let tagc = if g.tags.contains(&"HOT") {
@@ -150,10 +150,10 @@ fn group(r: &Report, g: &Group, c: &Paint, w: usize) -> String {
     let why = match g.verdict {
         Verdict::Outlived => match g.session_harness {
             Some(h) => {
-                format!("session still running ({agent} pid {h}), but nothing above this process")
+                format!("session still open ({agent} pid {h}) but no longer holds this")
             }
             None => {
-                let mut x = format!("no {agent} process for this session is running");
+                let mut x = "session is over".to_string();
                 if let Some(t) = g.session.last_write {
                     x += &format!(" · log last written {} ago", age(s.now.saturating_sub(t)));
                 }
@@ -166,18 +166,27 @@ fn group(r: &Report, g: &Group, c: &Paint, w: usize) -> String {
                 .as_ref()
                 .and_then(|o| o.returned_at)
                 .map(|t| age(s.now.saturating_sub(t)));
-            format!(
-                "{agent} pid {} is alive · the tool call returned {} ago, this kept running",
-                g.harness_pid.unwrap_or(0),
-                t.unwrap_or_default()
-            )
+            match t {
+                Some(t) => format!(
+                    "tool call returned {t} ago · {agent} pid {} still open",
+                    g.harness_pid.unwrap_or(0)
+                ),
+                None => format!(
+                    "tool call returned · {agent} pid {} still open",
+                    g.harness_pid.unwrap_or(0)
+                ),
+            }
         }
         Verdict::Live => format!("attached to {agent} pid {}", g.harness_pid.unwrap_or(0)),
     };
     o += &format!(
         "{pad}{}  {}\n",
         c.bold(&who),
-        clip(&why, w.saturating_sub(pad.len() + who.len() + 2))
+        wrap(
+            &why,
+            w.saturating_sub(pad.len() + who.len() + 2),
+            &" ".repeat(pad.len() + who.chars().count() + 2)
+        )
     );
 
     match &g.origin {
@@ -198,6 +207,14 @@ fn group(r: &Report, g: &Group, c: &Paint, w: usize) -> String {
                 "{pad}{}{}\n",
                 c.dim(&lead),
                 clip(&or.command.replace('\n', " ⏎ "), room)
+            );
+        }
+        None if g.tags.contains(&"MCP") => {
+            o += &format!(
+                "{pad}{}\n",
+                c.dim(&format!(
+                    "MCP server started by {agent} itself, not by a tool call"
+                ))
             );
         }
         None if g.session.transcript.is_some() => {
@@ -228,6 +245,27 @@ fn group(r: &Report, g: &Group, c: &Paint, w: usize) -> String {
         c.dim(&clip(&stats.join(" · "), w.saturating_sub(pad.len())))
     );
     o
+}
+
+/// Greedy word wrap; continuation lines get `indent`.
+fn wrap(s: &str, w: usize, indent: &str) -> String {
+    let w = w.max(24);
+    let mut out = String::new();
+    let mut line = 0;
+    for word in s.split(' ') {
+        let n = word.chars().count();
+        if line > 0 && line + 1 + n > w {
+            out.push('\n');
+            out.push_str(indent);
+            line = 0;
+        } else if line > 0 {
+            out.push(' ');
+            line += 1;
+        }
+        out.push_str(word);
+        line += n;
+    }
+    out
 }
 
 pub fn group_json(r: &Report, g: &Group) -> Value {

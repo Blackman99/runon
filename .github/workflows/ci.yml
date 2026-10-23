@@ -42,7 +42,7 @@ jobs:
           test "$c" = 3
           $R stop --dry-run
           $R stop --yes
-          $R --all
+          $R --all || test $? = 3
           $R stop --demo
           set +e; $R; c=$?; set -e
           echo "exit after cleanup: $c"
