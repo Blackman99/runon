@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>runon docs · install, usage, config, reference, FAQ</title>
+<meta name="description" content="How runon decides which processes outlived their coding agent, every command and flag, the JSON it prints, and what it will never signal.">
+<link rel="canonical" href="https://blackman99.github.io/runon/docs/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="runon">
+<meta property="og:title" content="runon docs · the engine-room manual">
+<meta property="og:description" content="Install, usage, config, the full reference and the FAQ for runon, the tool that finds what your coding agent left running.">
+<meta property="og:url" content="https://blackman99.github.io/runon/docs/">
+<meta property="og:image" content="https://blackman99.github.io/runon/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An engine-order telegraph set to FINISHED WITH ENGINES while three cylinders keep turning.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="runon docs · the engine-room manual">
+<meta name="twitter:description" content="Install, usage, config, reference and FAQ for runon.">
+<meta name="twitter:image" content="https://blackman99.github.io/runon/og.png">
+<meta name="theme-color" content="#d2e3b9">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../img/favicon-64.png" type="image/png" sizes="64x64">
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body class="manual">
+<a class="skip" href="#install">Skip to the manual</a>
+<header class="placard">
+  <a class="mark" href="../"><img src="../img/logo.svg" alt="" width="30" height="30"><span>runon</span></a>
+  <nav aria-label="site">
+    <a href="../">Engine room</a>
+    <a href="https://github.com/Blackman99/runon/releases/latest">Releases</a>
+    <a href="https://github.com/Blackman99/runon">GitHub</a>
+  </nav>
+</header>
+
+<div class="book">
+<aside class="tags" aria-label="sections">
+  <p class="tags-h">Valve tags</p>
+  <ol>
+    <li><a href="#install"><b>1</b>Install</a></li>
+    <li><a href="#usage"><b>2</b>Usage</a></li>
+    <li><a href="#verdicts"><b>3</b>How it decides</a></li>
+    <li><a href="#config"><b>4</b>Config</a></li>
+    <li><a href="#reference"><b>5</b>Reference</a></li>
+    <li><a href="#json"><b>6</b>JSON</a></li>
+    <li><a href="#faq"><b>7</b>FAQ</a></li>
+  </ol>
+</aside>
+
+<main class="pages">
+<p class="kicker">Manual · runon 0.1</p>
+<h1>The engine-room manual</h1>
+<p class="lede">runon reads the process table once, finds what Claude Code, Codex and OpenCode started, works out whether anything still holds each tree, and stops exactly the ones nobody does. It never guesses by process name and it never signals an agent.</p>
+
+<section id="install">
+<h2><b>1</b>Install</h2>
+<pre class="snippet"><code>curl -fsSL https://blackman99.github.io/runon/install.sh | sh</code></pre>
+<p>The script picks the binary for your OS and CPU from the <a href="https://github.com/Blackman99/runon/releases/latest">latest release</a>, checks it against <code>checksums.txt</code>, and puts it in <code>~/.local/bin</code>. Set <code>RUNON_BIN=/usr/local/bin</code> to install elsewhere, or <code>RUNON_VERSION=v0.1.0</code> to pin.</p>
+<table class="spec">
+<thead><tr><th>System</th><th>Target in the archive name</th></tr></thead>
+<tbody>
+<tr><td>Linux x86_64 / arm64</td><td><code>x86_64-unknown-linux-musl</code> · <code>aarch64-unknown-linux-musl</code> (static, .tar.gz)</td></tr>
+<tr><td>macOS arm64 / x86_64</td><td><code>aarch64-apple-darwin</code> · <code>x86_64-apple-darwin</code> (.tar.gz)</td></tr>
+<tr><td>Windows x86_64 / arm64</td><td><code>x86_64-pc-windows-msvc</code> · <code>aarch64-pc-windows-msvc</code> (.zip)</td></tr>
+</tbody>
+</table>
+<p>Archives are named <code>runon-v0.1.0-&lt;target&gt;</code> and hold the binary, the README and the licence.</p>
+<p>From source, with Rust 1.85 or newer: <code class="nw">cargo install --git https://github.com/Blackman99/runon</code>.</p>
+</section>
+
+<section id="usage">
+<h2><b>2</b>Usage</h2>
+<p>Try it without an agent first. <code>runon demo</code> starts three throwaway sessions (two Claude Code, one Codex) with real child processes and fake session logs under your temp directory, then scans them:</p>
+<pre class="snippet"><code>runon demo            # a small, real mess
+runon                 # scan: what outlived its agent
+runon stop --dry-run  # what would be signalled
+runon stop --demo     # clean the demo up</code></pre>
+<p>On a real machine the loop is the same: run <code>runon</code> after an agent session, read the why line, then <code>runon stop</code>. It asks once before sending anything. In scripts, pass <code>--yes</code>.</p>
+<h3>Let the session clean up after itself</h3>
+<p>Claude Code runs a <code>SessionEnd</code> hook when a session closes. <code>runon hook claude</code> prints one; merge it into <code>~/.claude/settings.json</code> or a repo's <code>.claude/settings.json</code>:</p>
+<pre class="snippet"><code>{
+  "hooks": {
+    "SessionEnd": [
+      { "hooks": [ { "type": "command", "command": "runon stop --hook", "timeout": 15 } ] }
+    ]
+  }
+}</code></pre>
+<p>The hook reads the session id from stdin and stops only what that session started, attached or not. <code>/clear</code> also fires <code>SessionEnd</code>; runon ignores it, so your MCP servers survive a clear.</p>
+</section>
+
+<section id="verdicts">
+<h2><b>3</b>How it decides</h2>
+<p>Coding agents stamp the commands they run with environment variables, and the kernel keeps a process's environment for its whole life. runon reads those stamps, then walks up each process's parents looking for a live harness. Every parent's start time is checked, so a recycled PID is never mistaken for the agent.</p>
+<table class="spec">
+<thead><tr><th>Agent</th><th>Stamp</th><th>What runon adds from the session log</th></tr></thead>
+<tbody>
+<tr><td>Claude Code</td><td><code>CLAUDECODE=1</code> <code>CLAUDE_CODE_SESSION_ID</code></td><td>the Bash call that started it, from <code>~/.claude/projects/…/&lt;session&gt;.jsonl</code></td></tr>
+<tr><td>Codex</td><td><code>CODEX_THREAD_ID</code> <code>CODEX_TOOL_CALL_ID</code></td><td>the exact call, and whether its output is already in <code>~/.codex/sessions/…/rollout-*.jsonl</code></td></tr>
+<tr><td>OpenCode</td><td><code>OPENCODE=1</code> <code>OPENCODE_SESSION_ID</code></td><td>the session (no log lookup yet)</td></tr>
+</tbody>
+</table>
+<dl class="verdicts">
+<dt><span class="b out">OUTLIVED</span></dt><dd>No live harness above it. Either the session is over, or the harness killed the shell it ran the command in and the shell's children kept going. That second case is how a stopped background task leaves a dev server behind. <code>runon stop</code> stops these.</dd>
+<dt><span class="b ret">RETURNED</span></dt><dd>Codex only. The harness is still running, but the rollout already holds the output of the tool call that started this tree. It is shown and left alone unless you pass <code>--returned</code>, because Codex may still be talking to it.</dd>
+<dt><span class="b live">LIVE</span></dt><dd>Still attached to a running agent. Listed with <code>--all</code>, never stopped by default.</dd>
+</dl>
+<p>Rows also carry tags: <code>HOT</code> (50% of a core or more), <code>BIG</code> (500 MB resident or more), <code>MCP</code> (looks like an MCP server) and <code>DEMO</code> (started by <code>runon demo</code>).</p>
+<h3>What a stop does</h3>
+<ol class="seq">
+<li>Shows the trees and asks once (or not, with <code>--yes</code>).</li>
+<li>Sends TERM to the deepest child first, then up the tree.</li>
+<li>Waits the grace period (3 s), then sends KILL only to what is still there.</li>
+<li>Before every signal, checks the PID still belongs to the same process. It refuses to signal an agent harness or its own parents.</li>
+</ol>
+</section>
+
+<section id="config">
+<h2><b>4</b>Config</h2>
+<p>There is no config file. Everything is a flag or an environment variable.</p>
+<table class="spec">
+<thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>CLAUDE_CONFIG_DIR</code> / <code>--claude-home P</code></td><td><code>~/.claude</code></td><td>where Claude Code session logs are read from</td></tr>
+<tr><td><code>CODEX_HOME</code> / <code>--codex-home P</code></td><td><code>~/.codex</code></td><td>where Codex rollouts are read from</td></tr>
+<tr><td><code>NO_COLOR</code> / <code>--no-color</code></td><td>colour on a terminal</td><td>plain text output</td></tr>
+<tr><td><code>COLUMNS</code></td><td>100</td><td>output width, from 60 to 160</td></tr>
+<tr><td><code>--grace SECS</code></td><td>3</td><td>wait between TERM and KILL</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="reference">
+<h2><b>5</b>Reference</h2>
+<h3>Commands</h3>
+<table class="spec cmds">
+<tbody>
+<tr><td><code>runon</code></td><td>Scan. Lists OUTLIVED and RETURNED trees. Add <code>--all</code> for LIVE ones, <code>--json</code> for machines.</td></tr>
+<tr><td><code>runon stop</code></td><td>Stop OUTLIVED trees, after asking.</td></tr>
+<tr><td><code>runon demo</code></td><td>Start three fake sessions with real child processes and scan them. The children exit by themselves after ten minutes.</td></tr>
+<tr><td><code>runon hook claude</code></td><td>Print the Claude Code <code>SessionEnd</code> hook.</td></tr>
+<tr><td><code>runon version</code></td><td>Print the version.</td></tr>
+</tbody>
+</table>
+<h3>Stop flags</h3>
+<table class="spec cmds">
+<tbody>
+<tr><td><code>--dry-run</code></td><td>Show what would be stopped, signal nothing.</td></tr>
+<tr><td><code>--yes</code></td><td>Do not ask. Required when stdin is not a terminal, otherwise <code>stop</code> refuses before signalling.</td></tr>
+<tr><td><code>--returned</code></td><td>Also stop RETURNED trees.</td></tr>
+<tr><td><code>--session ID</code></td><td>Everything one session started, attached or not. A unique prefix is enough.</td></tr>
+<tr><td><code>--pid N</code></td><td>This process and its children, even if unstamped. Still refuses harnesses.</td></tr>
+<tr><td><code>--grace SECS</code></td><td>Seconds between TERM and KILL.</td></tr>
+<tr><td><code>--demo</code></td><td>End what <code>runon demo</code> started and delete its temp folders.</td></tr>
+<tr><td><code>--hook</code></td><td>Hook mode: read <code>{"session_id": …, "reason": …}</code> on stdin, stop that session's trees, stay silent on <code>clear</code>.</td></tr>
+</tbody>
+</table>
+<h3>Exit codes</h3>
+<table class="spec codes">
+<tbody>
+<tr><td><b>0</b></td><td>nothing outlived its agent (or the stop finished cleanly)</td></tr>
+<tr><td><b>3</b></td><td>strays found. Handy in CI: <code>runon || echo "something is still running"</code></td></tr>
+<tr><td><b>1</b></td><td>error</td></tr>
+<tr><td><b>64</b></td><td>usage error</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="json">
+<h2><b>6</b>JSON</h2>
+<p><code>runon --json</code> prints one object. This is a trimmed row from the demo on Linux:</p>
+<pre class="snippet"><code>{
+  "runon": "0.1.0", "scanned": 171, "elapsed_ms": 308, "agent_processes": 6,
+  "counts": { "outlived": 2, "returned": 1, "live": 2 },
+  "groups": [{
+    "verdict": "OUTLIVED", "agent": "claude",
+    "session": "1c6bfc7e-a113-4280-a745-a573dcb1afbb",
+    "command": "npm run dev -- --port 5173",
+    "pids": [2418516, 2418520], "cpu": 0.0, "rss_bytes": 4792320, "age_secs": 3,
+    "tags": ["DEMO"], "harness_pid": null, "session_harness_pid": null,
+    "origin": { "tool": "Bash", "command": "npm run dev -- --port 5173",
+                "background": true, "call_id": "toolu_01Demo8DevServer",
+                "at": "2026-10-23T02:40:31Z", "returned_at": "2026-10-23T02:40:31Z" },
+    "cwd": "/tmp/runon-demo-27762f71/shop"
+  }]
+}</code></pre>
+<table class="spec">
+<tbody>
+<tr><td><code>pids</code></td><td>the tree, root first</td></tr>
+<tr><td><code>harness_pid</code></td><td>the live agent above this tree, if any</td></tr>
+<tr><td><code>session_harness_pid</code></td><td>a live agent process for the same session elsewhere (the session is open but no longer holds this tree)</td></tr>
+<tr><td><code>origin</code></td><td>the tool call from the session log, when found; <code>null</code> otherwise</td></tr>
+<tr><td><code>cpu</code></td><td>percent of one core, summed over the tree, measured over about 0.3 s</td></tr>
+</tbody>
+</table>
+<p><code>runon stop --json</code> prints <code>{"stopped": [...]}</code> with a <code>result</code> per tree: <code>term</code>, <code>kill</code>, <code>gone</code> or <code>failed</code>.</p>
+</section>
+
+<section id="faq">
+<h2><b>7</b>FAQ</h2>
+<details open><summary>Will it kill my agent?</summary><p>No. Processes named like a harness (<code>claude</code>, <code>codex</code>, <code>opencode</code>) are never signalled, nor is anything in runon's own parent chain, even with <code>--pid</code>.</p></details>
+<details><summary>Why not just <code>pkill node</code>?</summary><p>Because the dev server you started yourself is also <code>node</code>. runon only looks at processes carrying an agent's stamp, so your own terminals are invisible to it.</p></details>
+<details><summary>Does it send anything anywhere?</summary><p>No network at all. It reads the process table and the session logs already on your disk, and prints.</p></details>
+<details><summary>Windows?</summary><p>Scanning works the same. Windows has no TERM, so a stop is a hard <code>TerminateProcess</code> after the same checks; processes get no chance to clean up. The <code>conhost.exe</code> every console program gets is left out of the trees.</p></details>
+<details><summary>Cursor, Aider, Gemini CLI?</summary><p>Not yet. runon needs a stamp the agent puts on its child processes; if your agent sets one, open an issue with <code>env</code> output from inside a tool call and it can be added.</p></details>
+<details><summary>A process says OUTLIVED but I still want it.</summary><p>Leave it. runon only reports unless you run <code>stop</code>, and <code>stop</code> always lists what it will signal before asking. <code>--dry-run</code> never signals.</p></details>
+<details><summary>What if a PID was reused?</summary><p>Every signal is preceded by a start-time check on that PID. If the process changed, it is skipped and reported as <code>gone</code>.</p></details>
+</section>
+
+<footer class="colophon"><p><b>run-on</b> (n.): a diesel that keeps turning after you cut the ignition. · <a href="https://github.com/Blackman99/runon">GitHub</a> · MIT</p></footer>
+</main>
+</div>
+<script src="docs.js" defer></script>
+</body>
+</html>

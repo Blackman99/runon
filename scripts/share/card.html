@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../site/fonts.css">
+<style>
+:root{--wall:#d2e3b9;--seam:#c0d4a5;--mach:#1e3326;--mach2:#2b4a36;--ink:#0f1a13;--enamel:#f4f6ef;--bolt:#6d7f72;--red:#e2492f;--ochre:#d98e04}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{width:100vw;height:100vh;overflow:hidden;background:var(--wall);color:var(--ink);font-family:Commissioner,sans-serif;
+  background-image:radial-gradient(circle at 12px 9px,var(--seam) 2.2px,transparent 2.8px),linear-gradient(to bottom,var(--seam) 0 1px,transparent 1px 120px);
+  background-size:48px 120px,100% 120px;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:48px;padding:0 56px 0 48px;position:relative}
+#dial{width:min(72vh,460px);height:min(72vh,460px);margin-bottom:5vh;overflow:visible;font-family:'League Gothic';position:relative;z-index:1}
+.deck{position:absolute;left:0;right:0;bottom:0;height:9vh;background:var(--mach);box-shadow:inset 0 8px 0 var(--mach2)}
+.deck::before{content:"";position:absolute;left:0;right:0;top:-46px;height:10px;background:var(--mach);
+  box-shadow:0 22px 0 var(--mach)}
+.copy{position:relative;z-index:1;padding-bottom:9vh;min-width:0}
+.brand{display:flex;align-items:center;gap:12px;font:400 42px/1 'League Gothic';letter-spacing:.04em;margin-bottom:14px}
+.brand img{width:44px;height:44px}
+h1{font:400 76px/.95 'League Gothic';text-transform:uppercase;margin:0 0 20px;letter-spacing:.01em;white-space:nowrap}
+h1 em{font-style:normal;color:var(--red);display:block}
+.plates{display:grid;gap:8px;margin-bottom:20px}
+.p{display:flex;align-items:center;gap:14px;background:var(--enamel);box-shadow:inset 0 0 0 2px var(--mach);padding:8px 14px;font:500 19px/1 'Ubuntu Sans Mono',monospace;white-space:nowrap}
+.p b{font:600 15px/1 'Ubuntu Sans Mono';padding:6px 8px;color:#fff;background:var(--red);letter-spacing:.04em}
+.p.r b{background:var(--ochre);color:var(--ink)}
+.p i{margin-left:auto;font-style:normal;color:var(--bolt);font-size:17px}
+.m{font:500 19px/1.35 'Ubuntu Sans Mono';color:var(--mach)}
+.m span{color:var(--bolt)}
+body.wide h1{font-size:80px}
+</style></head>
+<body>
+<div class="deck"></div>
+<svg id="dial" viewBox="-262 -262 524 524" aria-hidden="true"></svg>
+<div class="copy">
+  <div class="brand"><img src="../../site/img/logo.svg" alt="">runon</div>
+  <h1>The agent said stop.<em>Three processes didn't.</em></h1>
+  <div class="plates">
+    <div class="p"><b>OUTLIVED</b>npm run dev -- --port 5173<i>session over</i></div>
+    <div class="p"><b>OUTLIVED</b>tsc --watch -p .<i>shell killed</i></div>
+    <div class="p r"><b>RETURNED</b>pytest -x tests/<i>84% cpu</i></div>
+  </div>
+  <p class="m">runon demo · 171 processes scanned in 0.3 s<br><span>blackman99.github.io/runon</span></p>
+</div>
+<script>if (innerWidth > 1240) document.body.classList.add('wide')</script>
+<script src="card.js"></script>
+</body></html>
