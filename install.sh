@@ -10,9 +10,12 @@ version=${RUNON_VERSION:-}
 say() { printf 'runon-install: %s\n' "$*"; }
 die() { say "$*" >&2; exit 1; }
 
+for t in curl tar; do command -v "$t" >/dev/null 2>&1 || die "needs $t on PATH"; done
+
 case "$(uname -s)" in
   Linux) os=unknown-linux-musl ;;
   Darwin) os=apple-darwin ;;
+  MINGW*|MSYS*|CYGWIN*) die "on Windows, download runon-<version>-x86_64-pc-windows-msvc.zip from https://github.com/$repo/releases/latest, or run: cargo install --git https://github.com/$repo" ;;
   *) die "no prebuilt binary for $(uname -s); on Windows download the .zip from https://github.com/$repo/releases, or run: cargo install --git https://github.com/$repo" ;;
 esac
 case "$(uname -m)" in
