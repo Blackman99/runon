@@ -115,6 +115,10 @@ When a Claude Code session ends, `runon stop --hook` stops what that session lef
 - **Not yet tested inside a real Claude Code, Codex or OpenCode session on a user's machine.** The demo uses fake harnesses that set the same variables. If a verdict is wrong on your machine, `runon --all --json` output in an issue is the most useful bug report.
 - Cursor, Aider and Gemini CLI are not covered until their stamps are verified.
 
+## Articles
+
+- [How coding agents mark the processes they start, and why they outlive the session](docs/blog/how-runon-finds-agent-processes.md) · [中文](docs/blog/how-runon-finds-agent-processes.zh.md)
+
 ## Roadmap
 
 v0.2 `runon watch` and Codex/OpenCode hooks · v0.3 idle-session detection · v0.4 `runon report`, a redacted, paste-ready block for harness bug reports.
