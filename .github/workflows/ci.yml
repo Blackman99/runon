@@ -1,0 +1,48 @@
+name: CI
+on:
+  push: {branches: [main]}
+  pull_request:
+permissions: {contents: read}
+env: {CARGO_TERM_COLOR: always}
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix: {os: [ubuntu-latest, macos-latest, windows-latest]}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with: {components: 'clippy, rustfmt'}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - name: cargo test (real processes, real orphans)
+        run: cargo test -- --nocapture
+  demo:
+    name: demo end to end (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix: {os: [ubuntu-latest, macos-latest, windows-latest]}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release
+      - name: make a mess, find it, stop exactly it
+        shell: bash
+        env: {COLUMNS: '110', NO_COLOR: '1'}
+        run: |
+          set -euo pipefail
+          R=target/release/runon
+          $R demo
+          set +e; $R; c=$?; set -e
+          test "$c" = 3
+          $R stop --dry-run
+          $R stop --yes
+          $R --all
+          $R stop --demo
+          set +e; $R; c=$?; set -e
+          echo "exit after cleanup: $c"

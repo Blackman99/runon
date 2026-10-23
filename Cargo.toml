@@ -1,0 +1,27 @@
+[package]
+name = "runon"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Find the processes your coding agents started that are still running after the tool call, the stop, or the whole session ended, and stop exactly those."
+license = "MIT"
+repository = "https://github.com/Blackman99/runon"
+homepage = "https://blackman99.github.io/runon/"
+readme = "README.md"
+keywords = ["claude-code", "codex", "opencode", "processes", "orphans"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = ["site/", "assets/", "scripts/", ".github/"]
+
+[dependencies]
+serde_json = "1"
+sysinfo = { version = "0.39", default-features = false, features = ["system"] }
+
+[target."cfg(unix)".dependencies]
+libc = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
