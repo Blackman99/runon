@@ -15,4 +15,4 @@ shoot() { # w h out
 }
 shoot 1200 630 site/og.png
 shoot 1280 640 ../runon-promo/social-preview.png
-python3 -c "from PIL import Image; [print(f, Image.open(f).size) for f in ("site/og.png","../runon-promo/social-preview.png")]"
+python3 -c "from PIL import Image; [print(f, Image.open(f).size) for f in ('site/og.png','../runon-promo/social-preview.png')]"

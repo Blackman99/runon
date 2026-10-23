@@ -73,7 +73,7 @@ pub fn select(r: &Report, o: &StopOpts) -> Result<Vec<Target>, String> {
             picked.extend(r.groups.iter().filter(|g| sess_match(g, want)));
             if picked.len() == n {
                 return Err(format!(
-                    "no agent-started process belongs to a session starting with {want}"
+                    "no agent-started process belongs to a session starting with `{want}`; `runon --all` lists every session id it can see"
                 ));
             }
         }
@@ -86,7 +86,9 @@ pub fn select(r: &Report, o: &StopOpts) -> Result<Vec<Target>, String> {
                 }
             }
             let Some(p) = s.get(pid) else {
-                return Err(format!("no process with pid {pid}"));
+                return Err(format!(
+                    "no process with pid {pid} (it may have exited already; `runon --all` shows current pids)"
+                ));
             };
             if mine.contains(&pid) {
                 return Err(format!("pid {pid} is runon itself or one of its parents"));
@@ -216,7 +218,12 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
             } else {
                 ""
             };
-            println!("{}  nothing to stop{extra}", c.bold("runon"));
+            let what = if o.demo {
+                "no `runon demo` processes are left"
+            } else {
+                "nothing to stop"
+            };
+            println!("{}  {what}{extra}", c.bold("runon"));
         }
         return Ok(0);
     }
@@ -252,7 +259,10 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
             let v: Vec<_> = targets.iter().map(|t| json!({"label": t.label, "pids": t.procs.iter().map(|p| p.0).collect::<Vec<_>>()})).collect();
             println!("{}", json!({"dry_run": true, "would_stop": v}));
         } else {
-            println!("{}", c.dim("  dry run: nothing was signalled"));
+            println!(
+                "{}",
+                c.dim("  dry run: nothing was signalled · drop --dry-run to stop these")
+            );
         }
         return Ok(0);
     }
@@ -260,7 +270,7 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
         use std::io::{IsTerminal, Write};
         if !std::io::stdin().is_terminal() {
             return Err(
-                "refusing to stop processes without a terminal to confirm on; pass --yes".into(),
+                "no terminal to ask on, so nothing was stopped; re-run with --yes to stop the trees above, or --dry-run to only list them".into(),
             );
         }
         print!("  stop them? [y/N] ");
@@ -269,7 +279,7 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
         let _ = std::io::stdin().read_line(&mut a);
         if !matches!(a.trim(), "y" | "Y" | "yes") {
             println!("{}", c.dim("  left everything running"));
-            return Ok(1);
+            return Ok(0);
         }
     }
     let mut results = vec![];
@@ -277,7 +287,7 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
     for t in &targets {
         let out = stop(t, o.grace);
         let (word, detail) = match &out {
-            Outcome::Term => (c.green("stopped"), "TERM".to_string()),
+            Outcome::Term => (c.green("stopped"), "exited on TERM".to_string()),
             Outcome::Kill => (
                 c.ochre("killed "),
                 format!("ignored TERM for {}s, KILL", o.grace.as_secs()),
@@ -289,7 +299,12 @@ pub fn run(r: &Report, o: &StopOpts, c: &Paint) -> Result<i32, String> {
             }
         };
         if !o.json {
-            println!("  {word} {}  {}", t.label, c.dim(&detail));
+            let pids: Vec<String> = t.procs.iter().map(|p| p.0.to_string()).collect();
+            println!(
+                "  {word} {}  {}",
+                t.label,
+                c.dim(&format!("pid {} · {detail}", pids.join(" ")))
+            );
         }
         results.push(json!({
             "label": t.label,

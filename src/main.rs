@@ -100,7 +100,11 @@ fn parse(argv: Vec<String>) -> Result<Args, String> {
                 let v = val("--grace")?;
                 let s: f64 = v
                     .parse()
-                    .map_err(|_| format!("--grace wants seconds, got `{v}`"))?;
+                    .ok()
+                    .filter(|s: &f64| s.is_finite() && *s >= 0.0)
+                    .ok_or_else(|| {
+                        format!("--grace wants a number of seconds (0 to 600), got `{v}`")
+                    })?;
                 a.stop.grace = Duration::from_secs_f64(s.clamp(0.0, 600.0));
             }
             "--demo" => a.stop.demo = true,
@@ -208,7 +212,9 @@ fn hook(a: &Args) -> i32 {
             64
         }
         None => {
-            eprintln!("runon: which agent? try `runon hook claude`");
+            eprintln!(
+                "runon: which agent? only Claude Code has a SessionEnd hook so far: `runon hook claude`"
+            );
             64
         }
     }

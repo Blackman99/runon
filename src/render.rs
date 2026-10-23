@@ -68,6 +68,10 @@ pub fn text(r: &Report, all: bool, c: &Paint) -> String {
         },
     ));
     o += "\n";
+    if r.stamped == 0 {
+        o += &c.dim("       to see what a leak looks like: runon demo · to stop leaks at session end: runon hook claude");
+        o += "\n";
+    }
     let shown: Vec<&Group> = if all {
         r.groups.iter().collect()
     } else {
