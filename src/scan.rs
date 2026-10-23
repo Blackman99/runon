@@ -30,7 +30,7 @@ pub struct Stamp {
 
 /// Read the env stamps a harness put on a process, outermost-agnostic.
 /// Claude Code: CLAUDECODE=1 + CLAUDE_CODE_SESSION_ID. Codex: CODEX_THREAD_ID /
-/// CODEX_SESSION_ID + CODEX_TOOL_CALL_ID. OpenCode: OPENCODE=1 + OPENCODE_SESSION_ID.
+/// CODEX_SESSION_ID + CODEX_TOOL_CALL_ID. OpenCode: OPENCODE=1 + OPENCODE_SESSION_ID or OPENCODE_PID.
 pub fn stamps(p: &Proc) -> Vec<Stamp> {
     let mut v = vec![];
     if p.env("CLAUDE_CODE_SESSION_ID").is_some() || p.env("CLAUDECODE") == Some("1") {
@@ -50,7 +50,11 @@ pub fn stamps(p: &Proc) -> Vec<Stamp> {
     if p.env("OPENCODE_SESSION_ID").is_some() || p.env("OPENCODE") == Some("1") {
         v.push(Stamp {
             agent: Agent::OpenCode,
-            session: p.env("OPENCODE_SESSION_ID").map(String::from),
+            // OpenCode 1.19 sets OPENCODE_PID (the harness pid), not a session id
+            session: p
+                .env("OPENCODE_SESSION_ID")
+                .map(String::from)
+                .or_else(|| p.env("OPENCODE_PID").map(|x| format!("pid:{x}"))),
             call: None,
         });
     }
@@ -281,7 +285,10 @@ pub fn classify(s: Snapshot) -> Report {
             alive.entry(sess.clone()).or_insert(h);
         }
     }
-    for (hp, _) in &harnesses {
+    for (hp, a) in &harnesses {
+        if *a == Agent::OpenCode {
+            alive.entry(format!("pid:{hp}")).or_insert(*hp);
+        }
         // `claude --resume <id>`, `codex resume <id>`, `opencode -s <id>`
         for arg in &s.procs[hp].cmd {
             if arg.len() >= 8 && arg.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
@@ -291,7 +298,13 @@ pub fn classify(s: Snapshot) -> Report {
     }
     for g in &mut groups {
         if let Some(sess) = &g.stamp.session {
-            g.session_harness = g.harness_pid.or_else(|| alive.get(sess).copied());
+            g.session_harness = g.harness_pid.or_else(|| {
+                // a harness that started after the process cannot be its session (PID reuse)
+                alive
+                    .get(sess)
+                    .copied()
+                    .filter(|h| s.procs.get(h).is_some_and(|hp| hp.start <= g.start))
+            });
         }
     }
     groups.sort_by(|a, b| {
@@ -379,6 +392,24 @@ pub mod tests {
             (Verdict::Live, 30, vec![30, 31])
         );
         assert_eq!(l.harness_pid, Some(20));
+    }
+
+    #[test]
+    fn opencode_pid_stamp_links_session() {
+        let oc: &[(&str, &str)] = &[("OPENCODE", "1"), ("OPENCODE_PID", "20")];
+        let r = classify(snap(vec![
+            p(20, 1, "opencode", 200, &[]),
+            p(40, 1, "sleep", 302, oc),
+        ]));
+        assert_eq!(r.groups[0].verdict, Verdict::Outlived);
+        assert_eq!(r.groups[0].stamp.session.as_deref(), Some("pid:20"));
+        assert_eq!(r.groups[0].session_harness, Some(20));
+        // recycled: an opencode that started after the orphan is not its session
+        let r = classify(snap(vec![
+            p(20, 1, "opencode", 900, &[]),
+            p(40, 1, "sleep", 302, oc),
+        ]));
+        assert_eq!(r.groups[0].session_harness, None);
     }
 
     #[test]

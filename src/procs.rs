@@ -14,6 +14,7 @@ pub const KEYS: &[&str] = &[
     "CODEX_TOOL_CALL_ID",
     "OPENCODE",
     "OPENCODE_SESSION_ID",
+    "OPENCODE_PID",
     "AI_AGENT",
     "RUNON_DEMO",
     "RUNON_DEMO_HOME",
