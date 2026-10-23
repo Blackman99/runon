@@ -10,7 +10,7 @@ Claude Code、Codex CLI 和 OpenCode 都会替你执行 shell 命令。有时工
 |---|---|---|
 | Codex | `CODEX_SESSION_ID`、`CODEX_THREAD_ID`、`CODEX_TOOL_CALL_ID` | `codex-rs/protocol/src/shell_environment.rs` |
 | Claude Code 2.1.x | `CLAUDECODE=1`、`CLAUDE_CODE_SESSION_ID`（stdio MCP 服务器另有 `CLAUDE_PROJECT_DIR`） | 发行二进制中的字符串 |
-| OpenCode | `OPENCODE=1`、`OPENCODE_SESSION_ID` | `packages/core/src/tool/plugin/shell.ts` |
+| OpenCode | `OPENCODE=1`、`OPENCODE_PID`（1.19.x）或 `OPENCODE_SESSION_ID` | `packages/core/src/tool/plugin/shell.ts` |
 
 runon 读取它有权限读取的每个进程的环境，只保留带有这些标记的进程。没有标记的进程不会被列出，也不会被停止，除非你用 `--pid` 明确指定。
 
@@ -30,6 +30,6 @@ runon 读取它有权限读取的每个进程的环境，只保留带有这些�
 
 ## 测试了什么，没测试什么
 
-CI 在 Linux、macOS 和 Windows 上，针对 `runon demo` 启动的真实进程运行测试。demo harness 是 runon 的一个副本，设置了相同的变量，并不是真正的 Claude Code、Codex 或 OpenCode。这些标记来自源码和二进制文件。runon 目前还没有在这三个 harness 的真实会话里验证过。如果判定看起来不对，在 issue 中附上 `runon --all --json` 的输出是最有用的报告。
+CI 在 Linux、macOS 和 Windows 上，针对 `runon demo` 启动的真实进程运行测试。demo harness 是 runon 的一个副本，设置了相同的变量，并不是真正的 Claude Code、Codex 或 OpenCode。这些标记来自源码和二进制文件。此后做过一次真实验证：Linux 上的 OpenCode 1.19.4，实际标记是 `OPENCODE_PID` 而不是 `OPENCODE_SESSION_ID`。Claude Code、Codex 以及 macOS、Windows 尚未在真实会话中验证。如果判定看起来不对，在 issue 中附上 `runon --all --json` 的输出是最有用的报告。
 
 [English](./how-runon-finds-agent-processes.md)

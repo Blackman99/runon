@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- OpenCode: read `OPENCODE_PID`, which OpenCode 1.19.x sets instead of `OPENCODE_SESSION_ID`, to link an orphan to its still-running session (with a start-time check against PID reuse).
+- Checked in a real OpenCode 1.19.4 session on Linux. Claude Code and Codex, and macOS/Windows, are still unverified in real sessions.
+
 ## 0.1.0 — 2026-10-23
 
 First release.

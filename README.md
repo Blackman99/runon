@@ -80,7 +80,7 @@ Every harness stamps the environment of what it spawns, and the environment surv
 |---|---|
 | Codex | `CODEX_SESSION_ID`, `CODEX_THREAD_ID`, `CODEX_TOOL_CALL_ID` |
 | Claude Code 2.1.x | `CLAUDECODE=1`, `CLAUDE_CODE_SESSION_ID` (+ `CLAUDE_PROJECT_DIR` for stdio MCP servers) |
-| OpenCode | `OPENCODE=1`, `OPENCODE_SESSION_ID` |
+| OpenCode | `OPENCODE=1`, `OPENCODE_PID` (1.19.x) or `OPENCODE_SESSION_ID` |
 
 runon then walks each stamped process's parent chain, checking that each parent started before its child (Windows does not reparent, and PIDs get reused), to see whether a live harness still holds it:
 
@@ -112,7 +112,8 @@ When a Claude Code session ends, `runon stop --hook` stops what that session lef
 
 - CI runs the unit tests and an end-to-end test against **real processes** on Linux, macOS and Windows: `runon demo` spawns stamped children, runon has to find them with the right verdict and stop exactly those.
 - The env stamps were read from the harnesses' source and shipped binaries (Codex `codex-rs/protocol/src/shell_environment.rs`, OpenCode `packages/core/src/tool/plugin/shell.ts`, strings in the Claude Code 2.1.x binary).
-- **Not yet tested inside a real Claude Code, Codex or OpenCode session on a user's machine.** The demo uses fake harnesses that set the same variables. If a verdict is wrong on your machine, `runon --all --json` output in an issue is the most useful bug report.
+- **OpenCode 1.19.4 on Linux was checked in a real `opencode run` session** (2026-10-23): a backgrounded `sleep 600` carried `OPENCODE=1`, `AGENT=1`, `OPENCODE_PID=<harness pid>` and no `OPENCODE_SESSION_ID`; runon listed it as OUTLIVED linked to the live opencode pid. When the session exited, OpenCode had already ended the `sleep` itself, so nothing was left. That changed runon to read `OPENCODE_PID`.
+- **Not yet tested inside a real Claude Code or Codex session, and not inside any real session on macOS or Windows.** The demo uses fake harnesses that set the same variables. If a verdict is wrong on your machine, `runon --all --json` output in an issue is the most useful bug report.
 - Cursor, Aider and Gemini CLI are not covered until their stamps are verified.
 
 ## Articles
