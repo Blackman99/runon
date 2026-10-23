@@ -1,0 +1,27 @@
+runon demo · starting 3 fake agent sessions with real child processes…
+runon  3 still running after their agent let go
+       scanned 171 processes in 0.3s · 6 started by agents · 2 harnesses running
+
+ OUTLIVED  npm run dev -- --port 5173                                    DEMO  pid 2418516 +1
+           claude 1c6bfc7e  session is over · log last written 1s ago
+           Bash (background) toolu_01Demo8… 4s ago: npm run dev -- --port 5173
+           up 2s · 0.0% cpu · 4.6 MB · /tmp/runon-demo-27762f71/shop
+
+ OUTLIVED  tsc --watch -p .                                                 DEMO  pid 2418523
+           claude 2b72434c  session still open (claude pid 2418517) but no longer holds this
+           Bash (background) toolu_01Demo7… 4s ago: tsc --watch -p .
+           up 2s · 0.0% cpu · 2.1 MB · /tmp/runon-demo-27762f71/shop
+
+ RETURNED  pytest -x tests/                                             HOT DEMO  pid 2418518
+           codex ba898a2a  tool call returned 3s ago · codex pid 2418515 still open
+           exec_command call_demo_pyt… 4s ago: pytest -x tests/
+           up 2s · 84.6% cpu · 2.2 MB · /tmp/runon-demo-27762f71/shop
+
+  + 2 live trees (2 processes) attached to running agents · runon --all
+
+  stop exactly these   runon stop --dry-run   then   runon stop
+  RETURNED trees are left alone unless you add --returned (Codex may still be talking to them)
+  DEMO trees came from `runon demo` · end them with runon stop --demo
+
+  these are real processes. run `runon` again to see them, `runon stop --demo` to end them.
+  they exit by themselves in 10 minutes. files: /tmp/runon-demo-27762f71

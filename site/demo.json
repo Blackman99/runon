@@ -1,0 +1,93 @@
+{
+ "runon": "0.1.0",
+ "scanned": 171,
+ "elapsed_ms": 308,
+ "agent_processes": 6,
+ "counts": {
+  "live": 2,
+  "outlived": 2,
+  "returned": 1
+ },
+ "groups": [
+  {
+   "verdict": "OUTLIVED",
+   "agent": "claude",
+   "session": "1c6bfc7e-a113-4280-a745-a573dcb1afbb",
+   "command": "npm run dev -- --port 5173",
+   "pids": [
+    2418516,
+    2418520
+   ],
+   "cpu": 0.0,
+   "rss_bytes": 4792320,
+   "age_secs": 3,
+   "tags": [
+    "DEMO"
+   ],
+   "harness_pid": null,
+   "session_harness_pid": null,
+   "origin": {
+    "at": "2026-10-23T02:40:31Z",
+    "background": true,
+    "call_id": "toolu_01Demo8DevServer",
+    "command": "npm run dev -- --port 5173",
+    "returned_at": "2026-10-23T02:40:31Z",
+    "tool": "Bash"
+   },
+   "cwd": "/tmp/runon-demo-27762f71/shop"
+  },
+  {
+   "verdict": "OUTLIVED",
+   "agent": "claude",
+   "session": "2b72434c-a186-4603-a163-d2442a881624",
+   "command": "tsc --watch -p .",
+   "pids": [
+    2418523
+   ],
+   "cpu": 0.0,
+   "rss_bytes": 2248704,
+   "age_secs": 3,
+   "tags": [
+    "DEMO"
+   ],
+   "harness_pid": null,
+   "session_harness_pid": 2418517,
+   "origin": {
+    "at": "2026-10-23T02:40:31Z",
+    "background": true,
+    "call_id": "toolu_01Demo7TscWatch",
+    "command": "tsc --watch -p .",
+    "returned_at": "2026-10-23T02:40:31Z",
+    "tool": "Bash"
+   },
+   "cwd": "/tmp/runon-demo-27762f71/shop"
+  },
+  {
+   "verdict": "RETURNED",
+   "agent": "codex",
+   "session": "ba898a2a-452b-4ff5-af57-103430983902",
+   "command": "pytest -x tests/",
+   "pids": [
+    2418518
+   ],
+   "cpu": 83.5,
+   "rss_bytes": 2256896,
+   "age_secs": 3,
+   "tags": [
+    "HOT",
+    "DEMO"
+   ],
+   "harness_pid": 2418515,
+   "session_harness_pid": 2418515,
+   "origin": {
+    "at": "2026-10-23T02:40:31Z",
+    "background": false,
+    "call_id": "call_demo_pytest",
+    "command": "pytest -x tests/",
+    "returned_at": "2026-10-23T02:40:32Z",
+    "tool": "exec_command"
+   },
+   "cwd": "/tmp/runon-demo-27762f71/shop"
+  }
+ ]
+}

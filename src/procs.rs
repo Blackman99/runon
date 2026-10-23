@@ -48,7 +48,18 @@ impl Proc {
         if parts.is_empty() {
             return format!("[{}]", self.name);
         }
-        parts[0] = base(&parts[0]).to_string();
+        let b = base(&parts[0]);
+        let b = match b.len().checked_sub(4) {
+            Some(i)
+                if cfg!(windows)
+                    && b.is_char_boundary(i)
+                    && b[i..].eq_ignore_ascii_case(".exe") =>
+            {
+                &b[..i]
+            }
+            _ => b,
+        };
+        parts[0] = b.to_string();
         parts.join(" ")
     }
     pub fn joined(&self) -> String {
@@ -127,6 +138,11 @@ impl Snapshot {
         let mut procs = HashMap::new();
         for (pid, p) in sys.processes() {
             if p.thread_kind().is_some() {
+                continue;
+            }
+            // every console program on Windows gets a conhost.exe child from the
+            // system; it is not something the agent started and it goes with its owner
+            if cfg!(windows) && p.name().eq_ignore_ascii_case("conhost.exe") {
                 continue;
             }
             let mut env = BTreeMap::new();

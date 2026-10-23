@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>runon · find what your coding agent left running</title>
+<meta name="description" content="runon finds the processes Claude Code, Codex and OpenCode started that are still running after the tool call, the stop, or the whole session ended, and stops exactly those.">
+<link rel="canonical" href="https://blackman99.github.io/runon/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="runon">
+<meta property="og:title" content="runon · the agent said stop. three processes didn't.">
+<meta property="og:description" content="Finds the processes your coding agents started that outlived the tool call or the session (Claude Code, Codex, OpenCode), says why, and stops exactly those.">
+<meta property="og:url" content="https://blackman99.github.io/runon/">
+<meta property="og:image" content="https://blackman99.github.io/runon/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An engine-order telegraph set to FINISHED WITH ENGINES while three cylinders labelled npm run dev, tsc --watch and pytest keep turning.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="runon · the agent said stop. three processes didn't.">
+<meta name="twitter:description" content="Finds the processes your coding agents started that outlived the tool call or the session, says why, and stops exactly those.">
+<meta name="twitter:image" content="https://blackman99.github.io/runon/og.png">
+<meta name="twitter:image:alt" content="An engine-order telegraph set to FINISHED WITH ENGINES while three cylinders keep turning.">
+<meta name="theme-color" content="#d2e3b9">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="img/favicon-64.png" type="image/png" sizes="64x64">
+<link rel="preload" href="fonts/LeagueGothic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#platforms">Skip to the details</a>
+<header class="placard">
+  <a class="mark" href="./"><img src="img/logo.svg" alt="" width="30" height="30"><span>runon</span></a>
+  <nav aria-label="site">
+    <a href="docs/">Docs</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/Blackman99/runon">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<section class="room" aria-labelledby="h1">
+  <div class="bridge">
+    <div class="catwalk" aria-hidden="true"></div>
+    <figure class="telegraph" id="telegraph">
+      <svg id="dial" viewBox="-260 -260 520 520" role="img" aria-label="Engine-order telegraph. The order handle points at FINISHED WITH ENGINES; the answer pointer still shows AHEAD while processes are turning."></svg>
+      <figcaption class="legend"><span><i class="k order"></i>order: what the agent said</span> <span><i class="k answer"></i>answer: what its processes are doing</span></figcaption>
+    </figure>
+    <div class="pedestal">
+      <h1 id="h1"><img src="img/logo.svg" alt="" width="40" height="40">runon</h1>
+      <p class="lede">The agent said it was done. <b>Some of what it started didn't hear.</b><br>
+      runon finds the processes Claude Code, Codex and OpenCode started that are still running after the tool call, the stop, or the whole session ended, tells you why, and stops exactly those.</p>
+    </div>
+  </div>
+
+  <div class="engine" id="engine" aria-live="polite">
+    <div class="units" id="units" role="list" aria-label="One cylinder per process; it turns faster the more CPU the process uses."></div>
+    <div class="crankcase" aria-hidden="true"></div>
+  </div>
+
+  <div class="controls">
+    <div class="counter" aria-live="polite"><span class="drum" id="drum"><span>6</span></span><span id="count-label">running, the agent is busy</span></div>
+    <button class="lever" id="lever" type="button" disabled><span class="handle" aria-hidden="true"></span><code id="lever-cmd">runon stop</code></button>
+    <button class="ghost" id="replay" type="button">run it again</button>
+    <label class="ghost drop" id="drop">drop your own <code>runon --json</code><input type="file" accept=".json,application/json" id="file"></label>
+  </div>
+  <p class="note" id="note">The three turning cylinders are real rows from <code>runon demo --json</code> on Linux (CPU is the measured value). The three that stop are ordinary calls that ended with their tool call, drawn for contrast.</p>
+</section>
+
+<div class="ladder-wrap" id="platforms">
+<div class="ladder" aria-hidden="true"></div>
+
+<section class="deck" aria-labelledby="d1">
+  <p class="level">Upper platform <span>01</span></p>
+  <h2 id="d1">What it prints</h2>
+  <p>Run <code>runon</code> and it reads the process table once. Every row says which agent and session started the process, why runon thinks nobody is holding it anymore, and which tool call launched it, quoted from the session log.</p>
+  <figure class="log">
+    <pre id="term" tabindex="0" aria-label="Terminal output of runon demo"></pre>
+    <figcaption>Captured from <code>runon demo</code> on Linux at 92 columns. The colours are the ones the terminal shows.</figcaption>
+  </figure>
+</section>
+
+<section class="deck" aria-labelledby="d2">
+  <p class="level">Middle platform <span>02</span></p>
+  <h2 id="d2">How it knows who started what</h2>
+  <p>No guessing by process name. Coding agents stamp the commands they run with environment variables, and the kernel keeps them for the life of the process, so runon reads them back:</p>
+  <table class="stamps">
+    <thead><tr><th scope="col">Agent</th><th scope="col">Stamp runon reads</th><th scope="col">What it adds</th></tr></thead>
+    <tbody>
+      <tr><td>Claude Code</td><td><code>CLAUDECODE=1</code> <code>CLAUDE_CODE_SESSION_ID</code></td><td>the session, then the Bash call in <code>~/.claude/projects/…/&lt;session&gt;.jsonl</code></td></tr>
+      <tr><td>Codex</td><td><code>CODEX_THREAD_ID</code> <code>CODEX_TOOL_CALL_ID</code></td><td>the exact tool call, and whether it already returned in the rollout file</td></tr>
+      <tr><td>OpenCode</td><td><code>OPENCODE=1</code> <code>OPENCODE_SESSION_ID</code></td><td>the session</td></tr>
+    </tbody>
+  </table>
+  <p>Then it walks up the parent chain, checking each parent's start time so a recycled PID is never mistaken for the harness. Each tree lands in one of three states:</p>
+  <dl class="orders">
+    <div><dt><span class="b out">OUTLIVED</span></dt><dd>No live harness above it. The session ended, or the harness killed the shell and the shell's children kept going, which is how a stopped background task leaves a dev server behind.</dd></div>
+    <div><dt><span class="b ret">RETURNED</span></dt><dd>Codex only: the harness is alive, but the rollout already has the output of the tool call that started it. It is shown, and left alone unless you say <code>--returned</code>.</dd></div>
+    <div><dt><span class="b live">LIVE</span></dt><dd>Still attached to a running agent. Listed with <code>runon --all</code>, never stopped by default.</dd></div>
+  </dl>
+</section>
+
+<section class="deck" aria-labelledby="d3">
+  <p class="level">Floor plates <span>03</span></p>
+  <h2 id="d3">Stopping exactly those</h2>
+  <ol class="steps">
+    <li><code>runon stop --dry-run</code><span>prints the trees and PIDs it would signal. Nothing is sent.</span></li>
+    <li><code>runon stop</code><span>asks once, then sends TERM deepest child first, waits three seconds, and sends KILL only to what is left. Before every signal it checks the PID still belongs to the same process.</span></li>
+    <li><b class="k"><code>runon stop --returned</code> · <code>--session 3f2a</code> · <code>--pid 4121</code></b><span>widen or narrow the selection. It refuses to signal a harness or its own parents.</span></li>
+  </ol>
+  <h3>Or let the session clean up after itself</h3>
+  <p><code>runon hook claude</code> prints a Claude Code <code>SessionEnd</code> hook. When a session ends it stops that session's processes and nothing else; <code>/clear</code> is ignored.</p>
+<pre class="snippet"><code>{
+  "hooks": {
+    "SessionEnd": [
+      { "hooks": [ { "type": "command", "command": "runon stop --hook", "timeout": 15 } ] }
+    ]
+  }
+}</code></pre>
+</section>
+
+<section class="deck" id="install" aria-labelledby="d4">
+  <p class="level">Tank top <span>04</span></p>
+  <h2 id="d4">Install</h2>
+<pre class="snippet"><code>curl -fsSL https://blackman99.github.io/runon/install.sh | sh</code></pre>
+  <p>Static binaries for Linux (x86_64, arm64), macOS (arm64, x86_64) and Windows (x86_64, arm64) are on the <a href="https://github.com/Blackman99/runon/releases/latest">release page</a>, with <code>checksums.txt</code>; the installer checks it. Or build it: <code class="nw">cargo install --git https://github.com/Blackman99/runon</code>.</p>
+  <p>No agent handy? <code>runon demo</code> starts three throwaway sessions with real child processes, so you can watch it find and stop them. They exit by themselves after ten minutes.</p>
+</section>
+</div>
+</main>
+
+<footer class="foot">
+  <p><b>run-on</b> (n.): a diesel that keeps turning after you cut the ignition.</p>
+  <p><a href="https://github.com/Blackman99/runon">GitHub</a> · <a href="docs/">Docs</a> · <a href="https://github.com/Blackman99/runon/blob/main/LICENSE">MIT</a></p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>
