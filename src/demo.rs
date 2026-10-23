@@ -88,7 +88,31 @@ fn line(v: serde_json::Value) -> String {
 }
 
 /// Lay out the directory and start the three fake sessions.
+#[cfg(windows)]
+mod win {
+    use std::ffi::c_void;
+    unsafe extern "system" {
+        fn GetStdHandle(n: u32) -> *mut c_void;
+        fn SetHandleInformation(h: *mut c_void, mask: u32, flags: u32) -> i32;
+    }
+    /// Windows hands every inheritable handle to every child. Our own stdout
+    /// may be a pipe someone is reading to EOF; ten-minute demo actors must
+    /// not keep it open.
+    pub fn keep_std_handles() {
+        for n in [0xFFFF_FFF6u32, 0xFFFF_FFF5, 0xFFFF_FFF4] {
+            unsafe {
+                let h = GetStdHandle(n);
+                if !h.is_null() && h as isize != -1 {
+                    SetHandleInformation(h, 1, 0);
+                }
+            }
+        }
+    }
+}
+
 pub fn start() -> Result<Demo, String> {
+    #[cfg(windows)]
+    win::keep_std_handles();
     let self_exe =
         std::env::current_exe().map_err(|e| format!("cannot find runon's own binary: {e}"))?;
     let tag = &uid(7)[..8];
