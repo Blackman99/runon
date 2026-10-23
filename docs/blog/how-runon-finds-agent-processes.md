@@ -10,7 +10,7 @@ Each harness puts variables into the environment of the commands it spawns. A ch
 |---|---|---|
 | Codex | `CODEX_SESSION_ID`, `CODEX_THREAD_ID`, `CODEX_TOOL_CALL_ID` | `codex-rs/protocol/src/shell_environment.rs` |
 | Claude Code 2.1.x | `CLAUDECODE=1`, `CLAUDE_CODE_SESSION_ID` (+ `CLAUDE_PROJECT_DIR` for stdio MCP servers) | strings in the shipped binary |
-| OpenCode | `OPENCODE=1`, `OPENCODE_SESSION_ID` | `packages/core/src/tool/plugin/shell.ts` |
+| OpenCode | `OPENCODE=1`, `OPENCODE_PID` (1.19.x) or `OPENCODE_SESSION_ID` | `packages/core/src/tool/plugin/shell.ts` |
 
 runon reads the environment of every process it is allowed to read and keeps only those carrying one of these stamps. A process without a stamp is never listed and never stopped unless you name it with `--pid`.
 
@@ -30,6 +30,6 @@ For each stamped process runon walks up the parent chain. At every step it check
 
 ## What was tested, and what was not
 
-CI runs on Linux, macOS and Windows against real processes started by `runon demo`. The demo harness is a copy of runon that sets the same variables; it is not Claude Code, Codex or OpenCode. The stamps were taken from source and binaries. runon has not yet been checked inside a real session of any of the three harnesses. If a verdict looks wrong, the output of `runon --all --json` in an issue is the most useful report.
+CI runs on Linux, macOS and Windows against real processes started by `runon demo`. The demo harness is a copy of runon that sets the same variables; it is not Claude Code, Codex or OpenCode. The stamps were taken from source and binaries. Since then one real check was done: OpenCode 1.19.4 on Linux, where the stamp turned out to be `OPENCODE_PID` rather than `OPENCODE_SESSION_ID`. Claude Code and Codex, and macOS and Windows, have not been checked in real sessions. If a verdict looks wrong, the output of `runon --all --json` in an issue is the most useful report.
 
 [中文版](./how-runon-finds-agent-processes.zh.md)
