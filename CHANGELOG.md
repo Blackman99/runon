@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Minimum Rust for building from source is now 1.95 (it said 1.85, but sysinfo 0.39.6 needs 1.95, so older compilers failed). CI now builds with the `rust-version` from Cargo.toml.
 - OpenCode: read `OPENCODE_PID`, which OpenCode 1.19.x sets instead of `OPENCODE_SESSION_ID`, to link an orphan to its still-running session (with a start-time check against PID reuse).
 - Checked in a real OpenCode 1.19.4 session on Linux. Claude Code and Codex, and macOS/Windows, are still unverified in real sessions.
 

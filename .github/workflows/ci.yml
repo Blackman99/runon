@@ -20,6 +20,17 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       - name: cargo test (real processes, real orphans)
         run: cargo test -- --nocapture
+  msrv:
+    name: msrv (rust-version in Cargo.toml)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - id: msrv
+        run: echo "v=$(sed -n 's/^rust-version = \"\(.*\)\"/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with: {toolchain: '${{ steps.msrv.outputs.v }}'}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --locked --all-targets
   demo:
     name: demo end to end (${{ matrix.os }})
     strategy:

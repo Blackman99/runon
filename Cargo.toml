@@ -2,7 +2,7 @@
 name = "runon"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.95"
 description = "Find the processes your coding agents started that are still running after the tool call, the stop, or the whole session ended, and stop exactly those."
 license = "MIT"
 repository = "https://github.com/Blackman99/runon"
