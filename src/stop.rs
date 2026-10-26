@@ -79,11 +79,11 @@ pub fn select(r: &Report, o: &StopOpts) -> Result<Vec<Target>, String> {
         }
         let kids = s.children();
         for &pid in &o.pids {
-            if let Some(g) = r.groups.iter().find(|g| g.pids.contains(&pid)) {
-                if g.root == pid {
-                    picked.push(g);
-                    continue;
-                }
+            if let Some(g) = r.groups.iter().find(|g| g.pids.contains(&pid))
+                && g.root == pid
+            {
+                picked.push(g);
+                continue;
             }
             let Some(p) = s.get(pid) else {
                 return Err(format!(
@@ -168,10 +168,10 @@ pub fn stop(t: &Target, grace: Duration) -> Outcome {
         return Outcome::Gone;
     }
     for (p, st) in live.iter().rev() {
-        if alive(*p, *st) {
-            if let Err(e) = signal(*p, Sig::Term) {
-                return Outcome::Failed(format!("pid {p}: {e}"));
-            }
+        if alive(*p, *st)
+            && let Err(e) = signal(*p, Sig::Term)
+        {
+            return Outcome::Failed(format!("pid {p}: {e}"));
         }
     }
     let t0 = Instant::now();
@@ -183,10 +183,10 @@ pub fn stop(t: &Target, grace: Duration) -> Outcome {
     }
     let mut failed = None;
     for (p, st) in live.iter().rev() {
-        if alive(*p, *st) {
-            if let Err(e) = signal(*p, Sig::Kill) {
-                failed = Some(format!("pid {p}: {e}"));
-            }
+        if alive(*p, *st)
+            && let Err(e) = signal(*p, Sig::Kill)
+        {
+            failed = Some(format!("pid {p}: {e}"));
         }
     }
     let t1 = Instant::now();
