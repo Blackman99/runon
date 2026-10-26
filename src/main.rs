@@ -65,14 +65,14 @@ fn parse(argv: Vec<String>) -> Result<Args, String> {
         hook_kind: None,
     };
     let mut it = argv.into_iter().peekable();
-    if let Some(first) = it.peek() {
-        if !first.starts_with('-') {
-            let c = it.next().unwrap_or_default();
-            a.cmd = match c.as_str() {
-                "scan" | "stop" | "demo" | "hook" | "version" | "help" => c,
-                other => return Err(format!("unknown command `{other}` (try runon --help)")),
-            };
-        }
+    if let Some(first) = it.peek()
+        && !first.starts_with('-')
+    {
+        let c = it.next().unwrap_or_default();
+        a.cmd = match c.as_str() {
+            "scan" | "stop" | "demo" | "hook" | "version" | "help" => c,
+            other => return Err(format!("unknown command `{other}` (try runon --help)")),
+        };
     }
     let mut hook_flag = false;
     while let Some(x) = it.next() {

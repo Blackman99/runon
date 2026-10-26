@@ -40,7 +40,7 @@ People keep reporting the same thing in different trackers: the agent says a com
 curl -fsSL https://blackman99.github.io/runon/install.sh | sh
 ```
 
-The script picks the binary for your OS and CPU, checks it against `checksums.txt`, and puts it in `~/.local/bin` (`RUNON_BIN=...` to change, `RUNON_VERSION=v0.1.0` to pin). Prebuilt for Linux (x86_64, arm64, static musl), macOS (arm64, x86_64) and Windows (x86_64, arm64, `.zip` on the [release page](https://github.com/Blackman99/runon/releases/latest)). From source, Rust 1.85+:
+The script picks the binary for your OS and CPU, checks it against `checksums.txt`, and puts it in `~/.local/bin` (`RUNON_BIN=...` to change, `RUNON_VERSION=v0.1.0` to pin). Prebuilt for Linux (x86_64, arm64, static musl), macOS (arm64, x86_64) and Windows (x86_64, arm64, `.zip` on the [release page](https://github.com/Blackman99/runon/releases/latest)). From source, Rust 1.95+:
 
 ```sh
 cargo install --git https://github.com/Blackman99/runon
